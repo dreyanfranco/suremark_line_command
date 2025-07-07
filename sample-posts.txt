@@ -1,0 +1,21 @@
+# Sample posts file for batch processing
+# Lines starting with # are comments and will be ignored
+# Add one URL per line
+
+# Twitter/X posts
+https://twitter.com/example_user/status/1234567890123456789
+https://x.com/another_user/status/9876543210987654321
+
+# Instagram posts
+https://instagram.com/p/ABC123DEF456/
+https://instagram.com/reel/XYZ789GHI012/
+
+# YouTube videos
+https://youtube.com/watch?v=dQw4w9WgXcQ
+https://youtu.be/dQw4w9WgXcQ
+
+# Website articles
+https://example.com/article/verified-content
+https://news.example.com/breaking-news-verified
+
+# Add your actual post URLs below: 
