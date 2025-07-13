@@ -45,7 +45,8 @@ export class XAPIClient {
 
             if (tweet.data) {
                 const tweetId = tweet.data.id
-                const tweetUrl = `https://twitter.com/user/status/${tweetId}`
+                // Get the actual username from the API response or use a placeholder
+                const tweetUrl = `https://x.com/i/status/${tweetId}`
 
                 logger.info(`Tweet posted successfully. ID: ${tweetId}`)
 
