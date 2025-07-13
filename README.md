@@ -141,6 +141,67 @@ npm run monitor -- -u "suremark_user"
 -   `-q, --query <query>`: Search query (required)
 -   `-l, --limit <number>`: Maximum number of results (default: 20)
 
+## Statistics and Analytics
+
+The `npm run stats` command provides comprehensive analytics about your SureMark verification activity. This helps you track the effectiveness of your verification efforts and understand which platforms and content types are being verified most frequently.
+
+### What the Stats Show
+
+**Overall Metrics:**
+- **Total posts processed**: All posts that have been attempted (successful + failed)
+- **Successful posts**: Posts that were successfully verified and tweeted
+- **Failed posts**: Posts that failed during processing or tweeting
+
+**Time-based Metrics:**
+- **Today**: Successful verifications completed today
+- **This week**: Successful verifications in the last 7 days
+- **This month**: Successful verifications since the beginning of the current month
+
+**Platform Breakdown:**
+Shows which platforms you're verifying content from most frequently:
+- Twitter/X posts
+- Instagram posts
+- YouTube videos
+- Website articles
+- Other platforms
+
+**Username Activity:**
+Tracks which SureMark usernames are most active in content verification.
+
+### Example Output
+
+```
+📊 Processing Statistics:
+  Total posts processed: 25
+  Successful posts: 23
+  Failed posts: 2
+  Successful posts today: 5
+  Successful posts this week: 18
+  Successful posts this month: 23
+
+📱 By Platform:
+  twitter: 15
+  instagram: 5
+  youtube: 2
+  website: 1
+
+👤 By SureMark Username:
+  @john_suremark: 12
+  @jane_verifier: 8
+  @content_checker: 3
+```
+
+### Using Stats for Optimization
+
+1. **Track Performance**: Monitor your success rate to identify potential issues
+2. **Platform Focus**: See which platforms generate the most verification activity
+3. **User Activity**: Understand which team members are most active
+4. **Trend Analysis**: Compare daily, weekly, and monthly activity levels
+
+### Database Requirements
+
+The statistics feature requires a MongoDB connection to track processed posts. Make sure your MongoDB instance is running and properly configured in your `.env` file before using the stats command.
+
 ## Message Templates
 
 The bot uses customizable message templates:

@@ -143,6 +143,7 @@ export interface ProcessedPost {
     title?: string | undefined
     content?: string | undefined
     author?: string | undefined
+    success?: boolean | undefined
     tweet?:
         | {
               id: string

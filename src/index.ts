@@ -98,18 +98,19 @@ program
                     options.message
                 )
 
-            // Save to database
-            await database.saveProcessedPost({
-                url: postData.url,
-                platform: postData.platform,
-                processedAt: new Date(),
-                suremarkUsername: postData.suremark_username || undefined,
-                title: postData.title || undefined,
-                content: postData.content || undefined,
-                author: postData.author || undefined,
-            })
-
             if (options.dryRun) {
+                // For dry run, save as processed but not successful
+                await database.saveProcessedPost({
+                    url: postData.url,
+                    platform: postData.platform,
+                    processedAt: new Date(),
+                    suremarkUsername: postData.suremark_username || undefined,
+                    title: postData.title || undefined,
+                    content: postData.content || undefined,
+                    author: postData.author || undefined,
+                    success: false,
+                })
+
                 spinner.succeed(chalk.green(SUCCESS_MESSAGES.DRY_RUN))
                 console.log(chalk.cyan("\nGenerated tweet:"))
                 console.log(chalk.white(verificationMessage))
@@ -124,9 +125,17 @@ program
                 const result = await xClient.postTweet(verificationMessage)
 
                 if (result.success) {
-                    // Update database with tweet info
-                    await database.updateTweetInfo(
-                        postData.url,
+                    // Save to database only after successful tweet posting
+                    await database.saveSuccessfulPost(
+                        {
+                            url: postData.url,
+                            platform: postData.platform,
+                            processedAt: new Date(),
+                            suremarkUsername: postData.suremark_username || undefined,
+                            title: postData.title || undefined,
+                            content: postData.content || undefined,
+                            author: postData.author || undefined,
+                        },
                         result.tweet_id!,
                         result.tweet_url!
                     )
@@ -230,18 +239,6 @@ program
                             BOT_CONFIG.SURMARK_DASHBOARD_URL
                         )
 
-                    // Save to database
-                    await database.saveProcessedPost({
-                        url: postData.url,
-                        platform: postData.platform,
-                        processedAt: new Date(),
-                        suremarkUsername:
-                            postData.suremark_username || undefined,
-                        title: postData.title || undefined,
-                        content: postData.content || undefined,
-                        author: postData.author || undefined,
-                    })
-
                     if (!options.dryRun) {
                         // Post tweet
                         const result = await xClient.postTweet(
@@ -249,8 +246,18 @@ program
                         )
 
                         if (result.success) {
-                            await database.updateTweetInfo(
-                                postData.url,
+                            // Save to database only after successful tweet posting
+                            await database.saveSuccessfulPost(
+                                {
+                                    url: postData.url,
+                                    platform: postData.platform,
+                                    processedAt: new Date(),
+                                    suremarkUsername:
+                                        postData.suremark_username || undefined,
+                                    title: postData.title || undefined,
+                                    content: postData.content || undefined,
+                                    author: postData.author || undefined,
+                                },
                                 result.tweet_id!,
                                 result.tweet_url!
                             )
@@ -272,6 +279,18 @@ program
                             )
                         }
                     } else {
+                        // For dry run, save as processed but not successful
+                        await database.saveProcessedPost({
+                            url: postData.url,
+                            platform: postData.platform,
+                            processedAt: new Date(),
+                            suremarkUsername:
+                                postData.suremark_username || undefined,
+                            title: postData.title || undefined,
+                            content: postData.content || undefined,
+                            author: postData.author || undefined,
+                            success: false,
+                        })
                         processed++
                     }
                 } catch (error: any) {
@@ -362,9 +381,11 @@ program
 
             console.log(chalk.cyan("\n📊 Processing Statistics:"))
             console.log(chalk.white(`  Total posts processed: ${stats.total}`))
-            console.log(chalk.white(`  Posts today: ${stats.today}`))
-            console.log(chalk.white(`  Posts this week: ${stats.thisWeek}`))
-            console.log(chalk.white(`  Posts this month: ${stats.thisMonth}`))
+            console.log(chalk.green(`  Successful posts: ${stats.successful}`))
+            console.log(chalk.red(`  Failed posts: ${stats.failed}`))
+            console.log(chalk.white(`  Successful posts today: ${stats.today}`))
+            console.log(chalk.white(`  Successful posts this week: ${stats.thisWeek}`))
+            console.log(chalk.white(`  Successful posts this month: ${stats.thisMonth}`))
 
             if (Object.keys(stats.byPlatform).length > 0) {
                 console.log(chalk.cyan("\n📱 By Platform:"))

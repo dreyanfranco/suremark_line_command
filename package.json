@@ -10,6 +10,8 @@
         "tweet": "npm run build && node dist/index.js tweet",
         "batch": "npm run build && node dist/index.js batch",
         "monitor": "npm run build && node dist/index.js monitor",
+        "stats": "npm run build && node dist/index.js stats",
+        "search": "npm run build && node dist/index.js search",
         "test": "jest",
         "lint": "eslint src/**/*.ts",
         "clean": "rm -rf dist"

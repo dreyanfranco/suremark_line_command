@@ -32,7 +32,7 @@ export class PostDatabase {
     }
 
     /**
-     * Check if a post has already been processed
+     * Check if a post has already been successfully processed
      */
     async isPostProcessed(url: string): Promise<boolean> {
         if (!this.collection) {
@@ -40,7 +40,10 @@ export class PostDatabase {
         }
 
         try {
-            const result = await this.collection.findOne({ url })
+            const result = await this.collection.findOne({ 
+                url, 
+                success: { $eq: true } 
+            })
             return !!result
         } catch (error) {
             logger.error(`Error checking if post is processed: ${error}`)
@@ -65,6 +68,7 @@ export class PostDatabase {
                 title: post.title,
                 content: post.content,
                 author: post.author,
+                success: post.success,
                 metadata: post.metadata,
             }
 
@@ -77,6 +81,45 @@ export class PostDatabase {
                 return
             }
             logger.error(`Error saving processed post: ${error}`)
+            throw error
+        }
+    }
+
+    /**
+     * Save a successfully processed post with tweet info
+     */
+    async saveSuccessfulPost(post: ProcessedPost, tweetId: string, tweetUrl: string): Promise<void> {
+        if (!this.collection) {
+            throw new Error("Database not initialized")
+        }
+
+        try {
+            const document = {
+                url: post.url,
+                platform: post.platform,
+                processedAt: post.processedAt,
+                suremarkUsername: post.suremarkUsername,
+                title: post.title,
+                content: post.content,
+                author: post.author,
+                success: true,
+                tweet: {
+                    id: tweetId,
+                    url: tweetUrl,
+                    postedAt: new Date(),
+                },
+                metadata: post.metadata,
+            }
+
+            await this.collection.insertOne(document)
+            logger.info(`Saved successful post: ${post.url}`)
+        } catch (error: any) {
+            if (error.code === 11000) {
+                // Duplicate key error (URL already exists)
+                logger.warn(`Post already exists: ${post.url}`)
+                return
+            }
+            logger.error(`Error saving successful post: ${error}`)
             throw error
         }
     }
@@ -224,6 +267,8 @@ export class PostDatabase {
      */
     async getStatistics(): Promise<{
         total: number
+        successful: number
+        failed: number
         byPlatform: Record<string, number>
         byUsername: Record<string, number>
         today: number
@@ -237,9 +282,12 @@ export class PostDatabase {
         try {
             // Total posts
             const total = await this.collection.countDocuments()
+            const successful = await this.collection.countDocuments({ success: true })
+            const failed = await this.collection.countDocuments({ success: false })
 
-            // Posts by platform
+            // Posts by platform (only successful ones)
             const platformPipeline = [
+                { $match: { success: true } },
                 { $group: { _id: "$platform", count: { $sum: 1 } } },
                 { $sort: { count: -1 } },
             ]
@@ -252,9 +300,9 @@ export class PostDatabase {
                 byPlatform[result._id] = result.count
             })
 
-            // Posts by username
+            // Posts by username (only successful ones)
             const usernamePipeline = [
-                { $match: { suremarkUsername: { $exists: true, $ne: null } } },
+                { $match: { success: true, suremarkUsername: { $exists: true, $ne: null } } },
                 { $group: { _id: "$suremarkUsername", count: { $sum: 1 } } },
                 { $sort: { count: -1 } },
             ]
@@ -267,30 +315,35 @@ export class PostDatabase {
                 byUsername[result._id] = result.count
             })
 
-            // Posts today
+            // Posts today (only successful ones)
             const today = new Date()
             today.setHours(0, 0, 0, 0)
             const todayCount = await this.collection.countDocuments({
                 processedAt: { $gte: today },
+                success: true,
             })
 
-            // Posts this week
+            // Posts this week (only successful ones)
             const thisWeek = new Date()
             thisWeek.setDate(thisWeek.getDate() - 7)
             const weekCount = await this.collection.countDocuments({
                 processedAt: { $gte: thisWeek },
+                success: true,
             })
 
-            // Posts this month
+            // Posts this month (only successful ones)
             const thisMonth = new Date()
             thisMonth.setDate(1)
             thisMonth.setHours(0, 0, 0, 0)
             const monthCount = await this.collection.countDocuments({
                 processedAt: { $gte: thisMonth },
+                success: true,
             })
 
             return {
                 total,
+                successful,
+                failed,
                 byPlatform,
                 byUsername,
                 today: todayCount,
@@ -301,6 +354,8 @@ export class PostDatabase {
             logger.error(`Error getting statistics: ${error}`)
             return {
                 total: 0,
+                successful: 0,
+                failed: 0,
                 byPlatform: {},
                 byUsername: {},
                 today: 0,
